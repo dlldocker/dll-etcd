@@ -1,115 +1,29 @@
 version: '3'
 
 services:
-  etcd0:
-    image: quay.io/coreos/etcd
-    container_name: etcd0
-    ports:
-      - 2379
-      - 2380
-    volumes:
+  etcd:
+    image: "quay.io/coreos/etcd:v3.3"
+    container_name: "etcdv3.3"
+    environment:
+      ETCD_ADVERTISE_CLIENT_URLS: "http://0.0.0.0:2379"
+      ETCD_LISTEN_CLIENT_URLS: "http://0.0.0.0:2379"
+      ETCDCTL_API: "3"
+    volumes: 
       - $PWD/etcd/etcd0:/etcd_data
-    command:
-      - etcd
-      - -name
-      - etcd0
-      - --data-dir
-      - /etcd_data
-      - -advertise-client-urls
-      - http://etcd0:2379
-      - -listen-client-urls
-      - http://0.0.0.0:2379
-      - -initial-advertise-peer-urls
-      - http://etcd0:2380
-      - -listen-peer-urls
-      - http://0.0.0.0:2380
-      - -initial-cluster
-      - etcd0=http://etcd0:2380,etcd1=http://etcd1:2380,etcd2=http://etcd2:2380
-    networks:
-      - etcd-net
-
-  etcd1:
-    image: quay.io/coreos/etcd
-    container_name: etcd1
     ports:
-      - 2379
-      - 2380
-    volumes:
-      - $PWD/etcd/etcd1:/etcd_data
-    command:
-      - etcd
-      - -name
-      - etcd1
-      - --data-dir
-      - /etcd_data
-      - -advertise-client-urls
-      - http://etcd1:2379
-      - -listen-client-urls
-      - http://0.0.0.0:2379
-      - -initial-advertise-peer-urls
-      - http://etcd1:2380
-      - -listen-peer-urls
-      - http://0.0.0.0:2380
-      - -initial-cluster
-      - etcd0=http://etcd0:2380,etcd1=http://etcd1:2380,etcd2=http://etcd2:2380
+      - 2379:2379
+      - 2380:2380
+      - 4001:4001
     networks:
-      - etcd-net
-
-  etcd2:
-    image: quay.io/coreos/etcd
-    container_name: etcd2
-    ports:
-      - 2379
-      - 2380
-    volumes:
-      - $PWD/etcd/etcd2:/etcd_data
-    command:
-      - etcd
-      - -name
-      - etcd2
-      - --data-dir
-      - /etcd_data
-      - -advertise-client-urls
-      - http://etcd2:2379
-      - -listen-client-urls
-      - http://0.0.0.0:2379
-      - -initial-advertise-peer-urls
-      - http://etcd2:2380
-      - -listen-peer-urls
-      - http://0.0.0.0:2380
-      - -initial-cluster
-      - etcd0=http://etcd0:2380,etcd1=http://etcd1:2380,etcd2=http://etcd2:2380
-    networks:
-      - etcd-net
-      
+      - dll-etcd-net
   etcd-manage:
-      build: ./etcd-manage
-      container_name: "etcd-ui"
-      restart: always
-      volumes:
-        - $PWD/etcd-manage/conf/config.default.ini:/app/conf/config.default.ini
-      ports:
-        - "9090:9090"
-      networks:
-        - etcd-net
+    build: .
+    volumes:
+      - ./bin/config/cfg.toml:/app/config/cfg.toml
+      - ./bin/logs:/app/logs
+    ports:
+      - "10280:10280"
+    networks:
+      - dll-etcd-net
 networks:
-  etcd-net:
-
-
-
-# --name
-# etcd集群中的节点名，这里可以随意，可区分且不重复就行  
-# --listen-peer-urls
-# 监听的用于节点之间通信的url，可监听多个，集群内部将通过这些url进行数据交互(如选举，数据同步等)
-# --initial-advertise-peer-urls 
-# 建议用于节点之间通信的url，节点间将以该值进行通信。
-# --listen-client-urls
-# 监听的用于客户端通信的url,同样可以监听多个。
-# --advertise-client-urls
-# 建议使用的客户端通信url,该值用于etcd代理或etcd成员与etcd节点通信。
-# --initial-cluster-token etcd-cluster-1
-# 节点的token值，设置该值后集群将生成唯一id,并为每个节点也生成唯一id,当使用相同配置文件再启动一个集群时，只要该token值不一样，etcd集群就不会相互影响。
-# --initial-cluster
-# 也就是集群中所有的initial-advertise-peer-urls 的合集
-# --initial-cluster-state new
-# 新建集群的标志
+  dll-etcd-net:
