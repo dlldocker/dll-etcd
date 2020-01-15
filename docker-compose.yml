@@ -1,29 +1,30 @@
-version: '3'
+version: '3.7'
 
 services:
   etcd:
-    image: "quay.io/coreos/etcd:v3.3"
+    image: "gcr.azk8s.cn/etcd-development/etcd:v3.3.12"
     container_name: "etcdv3.3"
     environment:
       ETCD_ADVERTISE_CLIENT_URLS: "http://0.0.0.0:2379"
       ETCD_LISTEN_CLIENT_URLS: "http://0.0.0.0:2379"
       ETCDCTL_API: "3"
+      ETCD_DATA_DIR: /etcd_data
     volumes: 
-      - $PWD/etcd/etcd0:/etcd_data
+      - $PWD/etcd_data:/etcd_data
     ports:
       - 2379:2379
       - 2380:2380
       - 4001:4001
     networks:
-      - dll-etcd-net
-  etcd-manage:
-    build: .
+      - etcd-net
+  e3w:
+    image: soyking/e3w:latest
     volumes:
-      - ./bin/config/cfg.toml:/app/config/cfg.toml
-      - ./bin/logs:/app/logs
+      - $PWD/conf/config.default.ini:/app/conf/config.default.ini
     ports:
-      - "10280:10280"
+      - "8080:8080"
     networks:
-      - dll-etcd-net
+      - etcd-net
 networks:
-  dll-etcd-net:
+  etcd-net:
+    name: etcd-net
